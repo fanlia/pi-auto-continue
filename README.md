@@ -53,7 +53,7 @@
 pi install git:github.com/fanlia/pi-auto-continue
 
 # 或本地开发时直接安装
-pi install /home/x/lab/pi-auto-continue
+pi install /path/to/pi-auto-continue
 
 # 发布到 npm 后（当前尚未发布）
 pi install npm:@fanlia/pi-auto-continue
