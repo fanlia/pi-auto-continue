@@ -2,7 +2,8 @@
  * auto-continue 行为测试：驱动扩展工厂（mock pi/ctx），断言模型真实收到的消息内容。
  * 只断言用户可见的价值（消息文本），不断言内部调用次数——防 mock 假绿。
  */
-import { describe, expect, test } from "bun:test";
+import assert from "node:assert/strict";
+import { describe, test } from "node:test";
 import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -18,6 +19,14 @@ interface Harness {
 	sent: string[];
 	notifies: string[];
 	flags: Record<string, string | boolean>;
+}
+
+function contains(text: string, needle: string): void {
+	assert.ok(text.includes(needle), `expected text to contain: ${needle}`);
+}
+
+function notContains(text: string, needle: string): void {
+	assert.ok(!text.includes(needle), `expected text not to contain: ${needle}`);
 }
 
 function makeHarness(): Harness {
@@ -125,17 +134,17 @@ describe("auto-continue 假设驱动的价值循环", () => {
 		await h.pi.fire("session_start", {}, ctx);
 		const options = { promptGuidelines: [] as string[] };
 		await h.pi.fire("before_agent_start", { systemPromptOptions: options }, ctx);
-		expect(options.promptGuidelines.length).toBe(3);
+		assert.equal(options.promptGuidelines.length, 3);
 		const joined = options.promptGuidelines.join("\n");
-		expect(joined).toContain("持续交付用户可感知的价值");
-		expect(joined).toContain("把计划当作可被证据改写的假设集");
-		expect(joined).toContain("SWOT 记录已知/未知");
-		expect(joined).toContain("OKR 把本轮假设写成可证伪的结果");
-		expect(joined).toContain("Check 是证伪");
-		expect(joined).toContain("优先 TDD");
-		expect(joined).toContain("精准跑与本次变更相关的测试");
-		expect(joined).toContain("没有价值的内容不算验证");
-		expect(joined).toContain("收口时 OKR/地图无未完成项");
+		contains(joined, "持续交付用户可感知的价值");
+		contains(joined, "把计划当作可被证据改写的假设集");
+		contains(joined, "SWOT 记录已知/未知");
+		contains(joined, "OKR 把本轮假设写成可证伪的结果");
+		contains(joined, "Check 是证伪");
+		contains(joined, "优先 TDD");
+		contains(joined, "精准跑与本次变更相关的测试");
+		contains(joined, "没有价值的内容不算验证");
+		contains(joined, "收口时 OKR/地图无未完成项");
 	});
 
 	test("无计划文件且有实际动作：发送「假设 → 证据」引导", async () => {
@@ -143,11 +152,11 @@ describe("auto-continue 假设驱动的价值循环", () => {
 		const ctx = makeCtx("/tmp/no-plan", [assistant("做了点事。\n[PDCA] do")], h.notifies);
 		autoContinue(h.pi);
 		await settle(h, ctx);
-		expect(h.sent.length).toBe(1);
-		expect(h.sent[0]).toContain("「假设 → 证据」循环推进");
-		expect(h.sent[0]).toContain("SWOT 记录信念边界");
-		expect(h.sent[0]).toContain("OKR 把假设写成可证伪的承诺");
-		expect(h.sent[0]).toContain("TDD 测试 Check 过");
+		assert.equal(h.sent.length, 1);
+		contains(h.sent[0], "「假设 → 证据」循环推进");
+		contains(h.sent[0], "SWOT 记录信念边界");
+		contains(h.sent[0], "OKR 把假设写成可证伪的承诺");
+		contains(h.sent[0], "TDD 测试 Check 过");
 	});
 
 	test("do 之后：Check 指令要求证伪＋精准测试不跑全量", async () => {
@@ -157,12 +166,12 @@ describe("auto-continue 假设驱动的价值循环", () => {
 			const ctx = makeCtx(cwd, [assistant("改完了。\n[PDCA] do")], h.notifies);
 			autoContinue(h.pi);
 			await settle(h, ctx);
-			expect(h.sent.length).toBe(1);
+			assert.equal(h.sent.length, 1);
 			const body = h.sent[0];
-			expect(body).toContain("Check 是证伪，不是自证");
-			expect(body).toContain("优先 TDD：先写失败测试");
-			expect(body).toContain("精准验证：只跑与本次变更相关的测试，别每次跑全量");
-			expect(body).toContain("函数是否存在、字数多少这类没有意义的内容不算验证");
+			contains(body, "Check 是证伪，不是自证");
+			contains(body, "优先 TDD：先写失败测试");
+			contains(body, "精准验证：只跑与本次变更相关的测试，别每次跑全量");
+			contains(body, "函数是否存在、字数多少这类没有意义的内容不算验证");
 		} finally {
 			await rm(cwd, { recursive: true, force: true });
 		}
@@ -175,13 +184,13 @@ describe("auto-continue 假设驱动的价值循环", () => {
 			const ctx = makeCtx(cwd, [assistant("做完了。\n[PDCA] do\n[PDCA] complete")], h.notifies);
 			autoContinue(h.pi);
 			await settle(h, ctx);
-			expect(h.sent.length).toBe(1);
+			assert.equal(h.sent.length, 1);
 			const body = h.sent[0];
-			expect(body).toContain("Check 绝不跳过");
-			expect(body).toContain("证伪，不是自证");
-			expect(body).toContain("TDD 测试验证 OKR 的交付价值");
-			expect(body).toContain("精准验证：只跑与本次变更相关的测试");
-			expect(body).toContain("没有意义的内容不算验证");
+			contains(body, "Check 绝不跳过");
+			contains(body, "证伪，不是自证");
+			contains(body, "TDD 测试验证 OKR 的交付价值");
+			contains(body, "精准验证：只跑与本次变更相关的测试");
+			contains(body, "没有意义的内容不算验证");
 		} finally {
 			await rm(cwd, { recursive: true, force: true });
 		}
@@ -198,8 +207,8 @@ describe("auto-continue 假设驱动的价值循环", () => {
 			);
 			autoContinue(h.pi);
 			await settle(h, ctx);
-			expect(h.sent.length).toBe(0);
-			expect(h.notifies.join("\n")).toContain("价值交付完成");
+			assert.equal(h.sent.length, 0);
+			contains(h.notifies.join("\n"), "价值交付完成");
 		} finally {
 			await rm(cwd, { recursive: true, force: true });
 		}
@@ -216,8 +225,8 @@ describe("auto-continue 假设驱动的价值循环", () => {
 			);
 			autoContinue(h.pi);
 			await settle(h, ctx);
-			expect(h.sent.length).toBe(1);
-			expect(h.sent[0]).toContain("OKR 还有 1 条关键结果未达成");
+			assert.equal(h.sent.length, 1);
+			contains(h.sent[0], "OKR 还有 1 条关键结果未达成");
 		} finally {
 			await rm(cwd, { recursive: true, force: true });
 		}
@@ -237,9 +246,9 @@ describe("auto-continue 假设驱动的价值循环", () => {
 			);
 			autoContinue(h.pi);
 			await settle(h, ctx);
-			expect(h.sent.length).toBe(1);
-			expect(h.sent[0]).toContain("用户故事地图还有 1 个未完成");
-			expect(h.sent[0]).toContain("可复跑的证据");
+			assert.equal(h.sent.length, 1);
+			contains(h.sent[0], "用户故事地图还有 1 个未完成");
+			contains(h.sent[0], "可复跑的证据");
 		} finally {
 			await rm(cwd, { recursive: true, force: true });
 		}
@@ -252,13 +261,13 @@ describe("auto-continue 假设驱动的价值循环", () => {
 			const ctx = makeCtx(cwd, [assistant("做完了。\n[PDCA] complete")], h.notifies);
 			autoContinue(h.pi);
 			await settle(h, ctx);
-			expect(h.sent.length).toBe(1);
+			assert.equal(h.sent.length, 1);
 			const body = h.sent[0];
-			expect(body).toContain("OKR（承诺）");
-			expect(body).toContain("地图（路径）");
-			expect(body).toContain("Check 绝不跳过");
-			expect(body).toContain("OKR 还有 1 条关键结果未达成");
-			expect(body).toContain("用户故事地图还有 1 个未完成");
+			contains(body, "OKR（承诺）");
+			contains(body, "地图（路径）");
+			contains(body, "Check 绝不跳过");
+			contains(body, "OKR 还有 1 条关键结果未达成");
+			contains(body, "用户故事地图还有 1 个未完成");
 		} finally {
 			await rm(cwd, { recursive: true, force: true });
 		}
@@ -269,14 +278,14 @@ describe("auto-continue 假设驱动的价值循环", () => {
 		try {
 			const { h, round } = await makeSession(cwd);
 			await round("做完了。\n[PDCA] do\n[PDCA] check");
-			expect(h.sent.length).toBe(1);
-			expect(h.sent[0]).toContain("Act");
+			assert.equal(h.sent.length, 1);
+			contains(h.sent[0], "Act");
 
 			await rm(join(cwd, "plan"), { recursive: true, force: true });
 			await round("完成。\n[PDCA] complete");
 
-			expect(h.notifies.join("\n")).not.toContain("价值交付完成");
-			expect(h.sent.length).toBe(1); // 没有用陈旧状态发打回/引导消息
+			notContains(h.notifies.join("\n"), "价值交付完成");
+			assert.equal(h.sent.length, 1); // 没有用陈旧状态发打回/引导消息
 		} finally {
 			await rm(cwd, { recursive: true, force: true });
 		}
@@ -293,8 +302,8 @@ describe("auto-continue 假设驱动的价值循环", () => {
 			const ctx = makeCtx(cwd, [assistant("计划更新完了。\n[PDCA] act")], h.notifies);
 			autoContinue(h.pi);
 			await settle(h, ctx);
-			expect(h.sent.length).toBe(1);
-			expect(h.sent[0]).toContain("SWOT（信念）S 已验证的价值优势");
+			assert.equal(h.sent.length, 1);
+			contains(h.sent[0], "SWOT（信念）S 已验证的价值优势");
 		} finally {
 			await rm(cwd, { recursive: true, force: true });
 		}
@@ -314,7 +323,7 @@ describe("auto-continue 假设驱动的价值循环", () => {
 
 			await round("做完了。\n[PDCA] do");
 			await round("验证完了。\n[PDCA] check");
-			expect(compacts).toBe(1); // 第二轮不再重复尝试压缩
+			assert.equal(compacts, 1); // 第二轮不再重复尝试压缩
 		} finally {
 			await rm(cwd, { recursive: true, force: true });
 		}
@@ -328,9 +337,9 @@ describe("auto-continue 假设驱动的价值循环", () => {
 			const ctx = makeCtx(cwd, [assistant(text)], h.notifies);
 			autoContinue(h.pi);
 			await settle(h, ctx);
-			expect(h.sent.length).toBe(1);
-			expect(h.sent[0]).toContain("继续「假设 → 证据」循环");
-			expect(h.sent[0]).not.toContain("不能收口");
+			assert.equal(h.sent.length, 1);
+			contains(h.sent[0], "继续「假设 → 证据」循环");
+			notContains(h.sent[0], "不能收口");
 		} finally {
 			await rm(cwd, { recursive: true, force: true });
 		}

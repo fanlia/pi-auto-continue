@@ -55,8 +55,8 @@ pi install git:github.com/fanlia/pi-auto-continue
 # 或本地开发时直接安装
 pi install /path/to/pi-auto-continue
 
-# 发布到 npm 后（当前尚未发布）
-pi install npm:@fanlia/pi-auto-continue
+# 从 npm 安装
+pi install npm:@ailnaf/pi-auto-continue
 
 # 只试用一次，不写入 settings
 pi -e git:github.com/fanlia/pi-auto-continue
@@ -153,16 +153,16 @@ O：用户可感知的价值改变。
 
 ## 开发
 
-要求：Bun ≥ 1.2、Node.js ≥ 20。
+要求：Node.js > 24（推荐 26 LTS）。不依赖 Bun。
 
 ```bash
-bun install
-bun run check      # tsc --noEmit && bun test
-bun test
-bun run typecheck
+npm install
+npm run check      # tsc --noEmit && node --test
+npm test
+npm run typecheck
 ```
 
-测试是行为级的：mock Pi / context，驱动扩展工厂，断言模型真实收到的消息文本，而不是内部调用次数。
+测试使用 Node 内置 `node:test` + 原生 TypeScript type stripping，无构建步骤。测试是行为级的：mock Pi / context，驱动扩展工厂，断言模型真实收到的消息文本，而不是内部调用次数。
 
 ```text
 .

@@ -121,11 +121,11 @@ agent_settled ── 真正停稳、无自动重试 / 压缩 / 排队
 
 ## 8. 测试策略
 
-测试不 mock 内部函数，而是驱动扩展工厂：
+测试不 mock 内部函数，而是用 Node 内置 `node:test` 驱动扩展工厂：
 
 1. 用临时 `plan/` 目录写入计划。
 2. mock `ExtensionAPI` / `ExtensionContext`。
 3. 触发 `session_start` → `agent_start` → `tool_execution_start` → `agent_settled`。
 4. 断言 `sendUserMessage` 收到的文本和 UI 通知。
 
-这样验证的是模型真实看到的价值，而不是实现细节。
+测试文件是原生 TypeScript，由 Node 的 type stripping 直接执行，不需要构建步骤。这样验证的是模型真实看到的价值，而不是实现细节。

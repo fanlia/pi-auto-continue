@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0 — 2026-10-21
+
+- 移除 Bun 依赖，改用 Node.js 原生工具链：`node --test` + 原生 TypeScript type stripping。
+- 要求 Node.js > 24；CI 使用 Node 26；提交 `package-lock.json`。
+- npm 包名改为 `@ailnaf/pi-auto-continue`。
+
 ## 0.1.0 — 2026-10-21
 
 首个公开版本。
